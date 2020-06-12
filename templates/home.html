@@ -1,0 +1,19 @@
+{% extends 'layout.html' %}
+{% block content %}
+    <div class="content-section">
+      <h5>Upload new File</h5>
+      <form method=post enctype=multipart/form-data action="/">
+      <input type=file name=file>
+      <input type=submit value=Upload>
+      </form>
+      {% if img %}
+        <div class="candid">
+            <img src="{{img}}" alt="image" width=400 align="center">
+        </div>
+        <div class="candid">
+            <img src="{{img}}" alt="image" width=400 align="center">
+        </div>
+      {% endif %}
+    </div>
+
+{% endblock content %}
