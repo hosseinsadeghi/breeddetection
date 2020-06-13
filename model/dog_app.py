@@ -21,6 +21,12 @@ path = __file__.replace('model/dog_app.py', '')
 
 
 def load_dog_names():
+    """
+    load dog names sorted by their label
+
+    Returns:
+        list: list of dog names
+    """
     with open(os.path.join(path, 'model/names.pkl'), 'rb') as f:
         dog_names = pickle.load(f)
         dog_names = [x.split('/')[-1][4:] for x in dog_names]
@@ -28,23 +34,47 @@ def load_dog_names():
 
 
 def load_dataset(path):
+    """
+    Given the path to the dataset of images, extract the file names and labels from the file name
+
+    Args:
+        path (str): path to the set images
+
+    Returns:
+        list: file paths
+        list: the name of the dog breed for each image
+    """
     files = glob(path + '*')
     targets = [x.split('/')[-1][:-10] for x in files]
     return files, targets
 
 
 def path_to_tensor(img_path):
+    """
+    Given an image path laod the image and return a tensor
+
+    Args:
+        img_path (str): path to the image
+    Returns:
+        tf.tensor
+    """
     img = image.load_img(img_path, target_size=(224, 224))
     x = image.img_to_array(img)
     return np.expand_dims(x, axis=0)
 
 
-def paths_to_tensor(img_paths):
-    list_of_tensors = [path_to_tensor(img_path) for img_path in img_paths]
-    return np.vstack(list_of_tensors)
-
-
 def get_model(p=os.path.join(path, 'model/DogInceptionV3Data.npz')):
+    """
+    Function that load feature maps form a pre-trained model. Then it will add a pooling layer and two dense layers to
+    tune the top of the CNN model to adapt to dog images. The model is already train on a set of dog images and it's
+    saved in `weights.best.Inception.hdf5`.
+
+    Args:
+        p (str): path to the DogInceptionV3Data.npz file that contains the transformed features. If file doesn't exist,
+        it will be downloaded from AWS.
+    Returns:
+        Keras Model
+    """
     url = 'https://s3-us-west-1.amazonaws.com/udacity-aind/dog-project/DogInceptionV3Data.npz'
     if not os.path.exists(p):
         urllib.request.urlretrieve(url, p)
@@ -60,6 +90,18 @@ def get_model(p=os.path.join(path, 'model/DogInceptionV3Data.npz')):
 
 
 class DogDetection:
+    """
+    The class handles all the necessary function for detection faces, and dogs in an image. After detection faces and
+    dogs this class allows you to find the dog breed of the dog in your image.
+
+    Example:
+        This example uses :class:`.DogDetection` to instantiate an object that handles all the necessary functions
+        to predict the dog breed of a dog image.
+
+        >>> dd = DogDetection()
+        >>> dd.which_dog('static/sample_dog_output.png')
+        >>> dd.dog_detector('static/sample_dog_output.png')
+    """
     def __init__(self):
         url = 'https://s3-us-west-1.amazonaws.com/udacity-aind/dog-project/DogInceptionV3Data.npz'
         p = os.path.join(path, 'inception_v3_weights_tf_dim_ordering_tf_kernels_notop.h5')
@@ -72,21 +114,58 @@ class DogDetection:
         self.face_cascade = cv2.CascadeClassifier(os.path.join(path, 'model/haarcascade_frontalface_alt.xml'))
 
     def face_detector(self, img_path):
+        """
+        Using the path to the image find the bounding box around a human face. Then return whether a face is
+        detected or not.
+
+        Args:
+            img_path (str): Path to the image
+
+        Returns:
+            (str): Name of the dog based on the prediction of the Inception model
+        """
         img = cv2.imread(img_path)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         faces = self.face_cascade.detectMultiScale(gray)
         return len(faces) > 0
 
     def Inception_predict_breed(self, img_path):
+        """
+        Using the path to the image predict the name of the dog
+
+        Args:
+            img_path (str): Path to the image
+
+        Returns:
+            (str): Name of the dog based on the prediction of the Inception model
+        """
         bottleneck_feature = extract_InceptionV3(path_to_tensor(img_path))
         predicted_vector = self.model.predict(bottleneck_feature)
         return self.dog_names[np.argmax(predicted_vector)]
 
     def ResNet50_predict_labels(self, img_path):
+        """
+        Using the path to the image it predict the label of the dog breed
+
+        Args:
+            img_path (str): Path to the image
+
+        Returns:
+            (int): Label of the dog image
+        """
         img = preprocess_input(path_to_tensor(img_path))
         return np.argmax(self.resnet.predict(img))
 
     def dog_detector(self, img_path):
+        """
+        Function to determine if there is a dog in the image or not
+
+        Args:
+            img_path (str): Path to the image
+
+        Returns:
+            bool: whether the image is a dog or not
+        """
         prediction = self.ResNet50_predict_labels(img_path)
         return (prediction <= 268) & (prediction >= 151)
 
