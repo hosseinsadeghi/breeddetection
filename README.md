@@ -92,6 +92,8 @@ We measure the performance by looking at the classification accuracy of the vali
 distribution of classes is only slightly unbalanced, we can safely use accuracy as a measure of performance. 
 After selection based on score on validation set, we achieve 77.5% accuracy on the test set.
 
+![labels_distribution](class_distribution.png)
+
 We can further improve our model by adding batch normalization the dense layers, dropout, and careful
 training procedure, for example, decrease learning rate throughout the training to reduce training noise
 produce by small batch size.   
