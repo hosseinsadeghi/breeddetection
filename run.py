@@ -37,8 +37,8 @@ def home():
             filename = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filename)
             message, breed = breed_detector.which_dog(filename)
-            img_sim = breed_detector.get_image(breed)
-            print(img_sim)
+            flash(message, category='success')
+            img_sim = os.path.join(app.config['UPLOAD_FOLDER'], breed_detector.get_image(breed).split('/')[-1])
             return render_template('home.html', img=filename, img_sim=img_sim)
     return render_template('home.html')
 
