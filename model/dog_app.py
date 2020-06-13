@@ -4,7 +4,6 @@ from glob import glob
 import pickle
 import random
 import cv2
-import matplotlib.pyplot as plt
 from model.extract_bottleneck_features import extract_InceptionV3
 from keras.applications.resnet50 import preprocess_input
 from PIL import ImageFile
@@ -15,11 +14,14 @@ from keras.models import Sequential
 from keras.applications.resnet50 import ResNet50
 import urllib.request
 import os
+
+
 random.seed(8675309)
+path = __file__.replace('model/dog_app.py', '')
 
 
 def load_dog_names():
-    with open('../model/names.pkl', 'rb') as f:
+    with open(os.path.join(path, 'model/names.pkl'), 'rb') as f:
         dog_names = pickle.load(f)
         dog_names = [x.split('/')[-1][4:] for x in dog_names]
     return dog_names
@@ -42,32 +44,36 @@ def paths_to_tensor(img_paths):
     return np.vstack(list_of_tensors)
 
 
-def get_model(path='../model/DogInceptionV3Data.npz'):
+def get_model(p=os.path.join(path, 'model/DogInceptionV3Data.npz')):
     url = 'https://s3-us-west-1.amazonaws.com/udacity-aind/dog-project/DogInceptionV3Data.npz'
-    if not os.path.exists(path):
-        urllib.request.urlretrieve(url, path)
-    bottleneck_features = np.load(path)
+    if not os.path.exists(p):
+        urllib.request.urlretrieve(url, p)
+    bottleneck_features = np.load(p)
     train_Inception = bottleneck_features['train']
     Inception_model = Sequential()
     Inception_model.add(GlobalAveragePooling2D(input_shape=train_Inception.shape[1:]))
     Inception_model.add(Dense(256, activation='relu'))
     Inception_model.add(Dense(133, activation='softmax'))
     Inception_model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
-    Inception_model.load_weights('../saved_models/weights.best.Inception.hdf5')
+    Inception_model.load_weights(os.path.join(path, 'saved_models/weights.best.Inception.hdf5'))
     return Inception_model
 
 
 class DogDetection:
     def __init__(self):
         url = 'https://s3-us-west-1.amazonaws.com/udacity-aind/dog-project/DogInceptionV3Data.npz'
-        path = 'model/inception_v3_weights_tf_dim_ordering_tf_kernels_notop.h5'
-        if not os.path.exists(path):
-            urllib.request.urlretrieve(url, path)
+        p = os.path.join(path, 'inception_v3_weights_tf_dim_ordering_tf_kernels_notop.h5')
+        if not os.path.exists(p):
+            urllib.request.urlretrieve(url, p)
         self.resnet = ResNet50(weights='imagenet')
+        # pickle.dump(self.resnet, open('resnet.pkl', 'wb'))
+        # self.resnet = pickle.load(open('resnet.pkl', 'rb'))
         self.model = get_model()
+        # pickle.dump(self.model, open('model.pkl', 'wb'))
+        # self.model = pickle.load(open('model.pkl', 'rb'))
         self.dog_names = load_dog_names()
-        self.train_files, self.train_targets = load_dataset('../images/train_images_sample/')
-        self.face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_alt.xml')
+        self.train_files, self.train_targets = load_dataset(os.path.join(path, 'static/'))
+        self.face_cascade = cv2.CascadeClassifier(os.path.join(path, 'model/haarcascade_frontalface_alt.xml'))
 
     def face_detector(self, img_path):
         img = cv2.imread(img_path)
@@ -119,21 +125,25 @@ class DogDetection:
 
 
 def main():
+    import matplotlib.pyplot as plt
+    from glob import glob
+    import cv2
     files = glob('../images/*')
-    dd = DogDetection()
+    breed_detector = DogDetection()
     for f in files:
-        message, breed = dd.which_dog(f)
+        message, breed = breed_detector.which_dog(f)
         print(message)
         img = cv2.imread(f)
         cv_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        file = dd.get_image(breed)
+        file = breed_detector.get_image(breed)
         img_similar = cv2.imread(file)
         cv_rgb_similar = cv2.cvtColor(img_similar, cv2.COLOR_BGR2RGB)
         fig, ax = plt.subplots(1, 2, figsize=(8, 4))
         ax[0].imshow(cv_rgb)
         ax[1].imshow(cv_rgb_similar)
         ax[1].set_title(breed)
-        plt.show()
+        plt.pause(0.0001)
+    plt.show()
 
 
 if __name__ == '__main__':

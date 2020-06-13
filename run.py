@@ -1,7 +1,16 @@
 from flask import render_template
-import os
 from flask import Flask, flash, request, redirect
 from werkzeug.utils import secure_filename
+import random
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+import os
+from model.dog_app import DogDetection
+
+random.seed(8675309)
+
+
+breed_detector = DogDetection()
 
 UPLOAD_FOLDER = 'static/'
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
@@ -25,8 +34,12 @@ def home():
         if file and allowed_file(file.filename):
             flash('Upload successful', category='success')
             filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            return render_template('home.html', img=app.config['UPLOAD_FOLDER'] + filename)
+            filename = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filename)
+            message, breed = breed_detector.which_dog(filename)
+            img_sim = breed_detector.get_image(breed)
+            print(img_sim)
+            return render_template('home.html', img=filename, img_sim=img_sim)
     return render_template('home.html')
 
 
@@ -36,4 +49,4 @@ def allowed_file(filename):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False, threaded=False)
