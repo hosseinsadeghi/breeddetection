@@ -13,10 +13,12 @@ random.seed(8675309)
 breed_detector = DogDetection()
 
 UPLOAD_FOLDER = 'static/'
+IMAGE_FOLDER = 'static/images/'
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['IMAGE_FOLDER'] = UPLOAD_FOLDER
 app.config['SECRET_KEY'] = '2b55241464af362a104880e46b36d2b6'
 
 
@@ -38,7 +40,7 @@ def home():
             file.save(filename)
             message, breed = breed_detector.which_dog(filename)
             flash(message, category='success')
-            img_sim = os.path.join(app.config['UPLOAD_FOLDER'], breed_detector.get_image(breed).split('/')[-1])
+            img_sim = os.path.join(app.config['IMAGE_FOLDER'], breed_detector.get_image(breed).split('/')[-1])
             return render_template('home.html', img=filename, img_sim=img_sim)
     return render_template('home.html')
 

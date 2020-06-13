@@ -66,13 +66,9 @@ class DogDetection:
         if not os.path.exists(p):
             urllib.request.urlretrieve(url, p)
         self.resnet = ResNet50(weights='imagenet')
-        # pickle.dump(self.resnet, open('resnet.pkl', 'wb'))
-        # self.resnet = pickle.load(open('resnet.pkl', 'rb'))
         self.model = get_model()
-        # pickle.dump(self.model, open('model.pkl', 'wb'))
-        # self.model = pickle.load(open('model.pkl', 'rb'))
         self.dog_names = load_dog_names()
-        self.train_files, self.train_targets = load_dataset(os.path.join(path, 'static/'))
+        self.train_files, self.train_targets = load_dataset(os.path.join(path, 'static/images/'))
         self.face_cascade = cv2.CascadeClassifier(os.path.join(path, 'model/haarcascade_frontalface_alt.xml'))
 
     def face_detector(self, img_path):
