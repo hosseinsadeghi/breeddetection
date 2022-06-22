@@ -1,4 +1,4 @@
-numpy==1.18.5
+numpy==1.22.0
 matplotlib==3.2.1
 opencv_python==4.2.0.34
 Flask==1.1.2
